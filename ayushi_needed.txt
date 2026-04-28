@@ -1,0 +1,6 @@
+1- Articutural Diagram 
+2- Dash Board view (entire system ,Overtime Perfomaance, Sample Count,Net Ratio,Error Count)
+3- Speaker Enrolment Interface 
+4- Confidence Score 
+5- Confusion Matrix 
+6- UI Heading 
