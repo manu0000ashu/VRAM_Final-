@@ -25,22 +25,8 @@ plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Helvetica']
 
 def extract_mfcc_features(audio_path):
     """Extract MFCC features from audio file"""
-    try:
-        y, sr = librosa.load(audio_path, sr=16000, mono=True)
-        mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, n_fft=512,
-                                   hop_length=160, n_mels=40, fmin=0, fmax=8000)
-        d1 = librosa.feature.delta(mfcc)
-        d2 = librosa.feature.delta(mfcc, order=2)
-        
-        # Create 39-dimensional embedding
-        vec = np.concatenate([mfcc.mean(1), d1.mean(1), d2.mean(1)])
-        norm = np.linalg.norm(vec) + 1e-8
-        embedding = vec / norm
-        
-        return embedding, mfcc, d1, d2, y, sr
-    except Exception as e:
-        print(f"Error extracting features: {e}")
-        return None, None, None, None, None, None
+    from extract_mfcc import extract_mfcc_for_graphs
+    return extract_mfcc_for_graphs(audio_path)
 
 def create_mfcc_comprehensive(mfcc, speaker_name, save_path):
     """Create comprehensive MFCC analysis like reference image"""
