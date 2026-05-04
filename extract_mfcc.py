@@ -8,6 +8,8 @@ import numpy as np
 import librosa
 from pathlib import Path
 import warnings
+import json
+import pickle
 
 warnings.filterwarnings('ignore')
 
@@ -83,6 +85,81 @@ class MFCCExtractor:
         except Exception as e:
             print(f"Feature extraction failed: {e}")
             raise
+    
+    def load_mfcc_features(self, mfcc_path):
+        """Load pre-computed MFCC features from file
+        
+        Args:
+            mfcc_path (str): Path to MFCC file (.npy, .json, or .pkl)
+            
+        Returns:
+            tuple: (normalized_vector, mfcc, delta_mfcc, delta2_mfcc, audio, sample_rate)
+        """
+        try:
+            mfcc_path = Path(mfcc_path)
+            
+            if not mfcc_path.exists():
+                raise FileNotFoundError(f"MFCC file not found: {mfcc_path}")
+            
+            # Load based on file extension
+            if mfcc_path.suffix == '.npy':
+                data = np.load(mfcc_path)
+            elif mfcc_path.suffix == '.json':
+                with open(mfcc_path, 'r') as f:
+                    data = np.array(json.load(f))
+            elif mfcc_path.suffix == '.pkl':
+                with open(mfcc_path, 'rb') as f:
+                    data = pickle.load(f)
+            else:
+                raise ValueError(f"Unsupported file format: {mfcc_path.suffix}")
+            
+            # Handle different data formats
+            if isinstance(data, dict):
+                # If data is a dictionary with keys
+                mfcc = data.get('mfcc', data.get('features', None))
+                delta = data.get('delta', None)
+                delta2 = data.get('delta2', None)
+                audio = data.get('audio', None)
+                sr = data.get('sample_rate', self.sample_rate)
+                
+                if mfcc is None:
+                    raise ValueError("No MFCC data found in dictionary")
+                    
+            elif isinstance(data, np.ndarray):
+                # If data is just MFCC array
+                mfcc = data
+                delta = librosa.feature.delta(mfcc)
+                delta2 = librosa.feature.delta(mfcc, order=2)
+                audio = None
+                sr = self.sample_rate
+            else:
+                raise ValueError(f"Unsupported data format: {type(data)}")
+            
+            # Generate embedding from MFCC
+            vec = np.concatenate([mfcc.mean(1), delta.mean(1), delta2.mean(1)])
+            norm = np.linalg.norm(vec) + 1e-8
+            
+            print(f"✅ Loaded MFCC features from: {mfcc_path}")
+            return vec / norm, mfcc, delta, delta2, audio, sr
+            
+        except Exception as e:
+            print(f"Error loading MFCC features: {e}")
+            raise
+    
+    def extract_or_load_features(self, file_path, use_mfcc_file=False):
+        """Extract features from audio or load from MFCC file
+        
+        Args:
+            file_path (str): Path to audio file or MFCC file
+            use_mfcc_file (bool): If True, treat as MFCC file; if False, treat as audio file
+            
+        Returns:
+            tuple: (normalized_vector, mfcc, delta_mfcc, delta2_mfcc, audio, sample_rate)
+        """
+        if use_mfcc_file:
+            return self.load_mfcc_features(file_path)
+        else:
+            return self.extract_ui_features(file_path)
     
     def extract_features_batch(self, audio_paths):
         """Extract features from multiple audio files

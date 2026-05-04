@@ -9,6 +9,7 @@ import json
 import shutil
 import pickle
 import numpy as np
+import librosa
 from pathlib import Path
 from datetime import datetime
 from extract_mfcc import MFCCExtractor
@@ -79,7 +80,7 @@ class AudioDatabaseManager:
             for speaker_name, embedding_list in embeddings_data.items():
                 self.siamese_embeddings[speaker_name] = np.array(embedding_list)
             
-            print(f"🧠 Siamese model loaded: {len(self.siamese_embeddings)} trained speakers")
+            print(f" Siamese model loaded: {len(self.siamese_embeddings)} trained speakers")
             return True
             
         except Exception as e:
@@ -115,58 +116,78 @@ class AudioDatabaseManager:
             json.dump(self.metadata, f, indent=2)
     
     def upload_audio(self):
-        """Upload and process a new audio file"""
+        """Upload and process new audio file"""
         print("\n" + "="*50)
         print("🎵 AUDIO UPLOAD")
         print("="*50)
         
-        # Get audio path
-        audio_path = input("Enter path to audio file: ").strip()
+        # Ask if using MFCC file or raw audio
+        use_mfcc = input("Use MFCC file instead of raw audio? (yes/no): ").strip().lower() in ['yes', 'y']
         
-        if not os.path.exists(audio_path):
+        if use_mfcc:
+            file_path = input("Enter path to MFCC file (.npy/.json/.pkl): ").strip()
+        else:
+            file_path = input("Enter path to audio file: ").strip()
+        
+        if not file_path:
+            print("❌ No path provided!")
+            return
+        
+        if not os.path.exists(file_path):
             print("❌ File not found!")
-            return False
+            return
         
-        # Get speaker name
         speaker_name = input("Enter speaker name: ").strip()
         if not speaker_name:
-            print("❌ Speaker name cannot be empty!")
-            return False
+            print("❌ No speaker name provided!")
+            return
         
         try:
-            # Extract features
-            print(f"🔄 Processing audio: {audio_path}")
-            embedding, mfcc, delta, delta2, y, sr = self.extractor.extract_ui_features(audio_path)
+            # Process audio or MFCC file
+            file_type = "MFCC file" if use_mfcc else "audio"
+            print(f"🔄 Processing {file_type}: {file_path}")
+            embedding, mfcc, delta, delta2, y, sr = self.extractor.extract_or_load_features(file_path, use_mfcc)
             
             # Generate unique filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            file_ext = Path(audio_path).suffix
+            file_ext = Path(file_path).suffix
             audio_filename = f"{speaker_name}_{timestamp}{file_ext}"
             audio_save_path = self.audio_dir / audio_filename
             
-            # Copy audio file to database
-            shutil.copy2(audio_path, audio_save_path)
+            # Save audio file (only if not MFCC file)
+            if use_mfcc:
+                audio_save_path = None  # No audio file saved for MFCC uploads
+                duration = 0.0  # No duration for MFCC files
+            else:
+                shutil.copy2(file_path, audio_save_path)
+                duration = librosa.get_duration(filename=file_path)
             
             # Store embedding and metadata
             self.embeddings[speaker_name] = embedding
             self.metadata[speaker_name] = {
-                "audio_file": audio_filename,
+                "audio_file": audio_save_path.name if audio_save_path else "MFCC_FILE",
                 "upload_time": datetime.now().isoformat(),
-                "original_path": audio_path,
                 "feature_shape": list(embedding.shape),
                 "sample_rate": sr,
-                "duration": len(y) / sr
+                "duration": duration,
+                "file_type": "MFCC" if use_mfcc else "AUDIO"
             }
             
             # Save database
             self.save_embeddings()
             self.save_metadata()
             
-            print(f"✅ Audio uploaded successfully!")
-            print(f"📁 Saved as: {audio_filename}")
-            print(f"🎯 Speaker: {speaker_name}")
-            print(f"📊 Features extracted: {embedding.shape}")
-            print(f"⏱️ Duration: {len(y) / sr:.2f} seconds")
+            if use_mfcc:
+                print(f"✅ MFCC features uploaded successfully!")
+                print(f" Speaker: {speaker_name}")
+                print(f"📊 Features loaded: {embedding.shape}")
+                print(f"📁 MFCC file: {file_path}")
+            else:
+                print(f"✅ Audio uploaded successfully!")
+                print(f"📁 Saved as: {audio_save_path}")
+                print(f" Speaker: {speaker_name}")
+                print(f"📊 Features extracted: {embedding.shape}")
+                print(f" Duration: {duration:.2f} seconds")
             
             # Generate advanced graphs for option 1
             print(f"\n📈 Generating advanced graphs for uploaded audio...")
@@ -205,22 +226,32 @@ class AudioDatabaseManager:
             return
         
         # Show available speakers
-        print("📋 Available speakers in database:")
+        print("Available speakers in database:")
         for i, speaker in enumerate(self.embeddings.keys(), 1):
             duration = self.metadata[speaker]["duration"]
             print(f"  {i}. {speaker} ({duration:.2f}s)")
         
-        # Get audio path
-        audio_path = input("\nEnter path to audio file to compare: ").strip()
-        
-        if not os.path.exists(audio_path):
-            print("❌ File not found!")
-            return
-        
         try:
-            # Extract features from comparison audio
-            print(f"🔄 Processing comparison audio: {audio_path}")
-            embedding, mfcc, delta, delta2, y, sr = self.extractor.extract_ui_features(audio_path)
+            # Ask if using MFCC file or raw audio
+            use_mfcc = input("Use MFCC file instead of raw audio? (yes/no): ").strip().lower() in ['yes', 'y']
+            
+            if use_mfcc:
+                file_path = input("Enter path to MFCC file (.npy/.json/.pkl): ").strip()
+            else:
+                file_path = input("Enter path to audio file to compare: ").strip()
+            
+            if not file_path:
+                print("❌ No path provided!")
+                return
+            
+            if not os.path.exists(file_path):
+                print("❌ File not found!")
+                return
+            
+            # Extract features from comparison audio or MFCC file
+            file_type = "MFCC file" if use_mfcc else "audio"
+            print(f"🔄 Processing comparison {file_type}: {file_path}")
+            embedding, mfcc, delta, delta2, y, sr = self.extractor.extract_or_load_features(file_path, use_mfcc)
             
             # Calculate MULTIPLE metrics for better discrimination
             # Including: Cosine, Euclidean, Manhattan, AND Siamese model
@@ -318,7 +349,7 @@ class AudioDatabaseManager:
             print(f"   Euclidean distance: {best_match[1]['euclidean']:.4f} (Need < 0.5)")
             if best_match[1]['siamese'] > 0:
                 print(f"   Siamese model: {best_match[1]['siamese']:.4f} (Need > 0.99)")
-                print(f"   🧠 Using trained neural network for verification")
+                print(f"    Using trained neural network for verification")
             
             # Debug: Show which conditions pass/fail
             print(f"\n🔍 CONDITIONS CHECK:")
@@ -338,7 +369,7 @@ class AudioDatabaseManager:
                 print(f"   ✅ Siamese: {best_match[1]['siamese']:.4f} (> 0.99)")
                 print(f"   ✅ Combined: {best_match[1]['combined']:.4f} (> 0.95)")
                 if is_perfect_siamese and not is_clear_winner:
-                    print(f"   ℹ️  Note: Gap was small but Siamese is perfect (≥0.999)")
+                    print(f"     Note: Gap was small but Siamese is perfect (≥0.999)")
                 print(f"   This speaker is VERIFIED in the database!")
             elif best_match[1]['siamese'] > 0.5 and best_match[1]['siamese'] < 0.99:
                 print(f"\n❓ BORDERLINE MATCH: {best_match[0]}")
@@ -346,12 +377,12 @@ class AudioDatabaseManager:
                 print(f"   but not confident enough (> 0.99 required).")
                 print(f"   This is likely an UNKNOWN SPEAKER or needs verification.")
             elif best_match[1]['siamese'] > 0 and best_match[1]['siamese'] <= 0.5:
-                print(f"\n🚫 UNKNOWN SPEAKER")
+                print(f"\n\033[1m🚫 UNKNOWN SPEAKER\033[0m")
                 print(f"   Siamese model confidence too low: {best_match[1]['siamese']:.4f}")
                 print(f"   Required: > 0.99 for verification")
                 print(f"   This speaker is NOT in the database!")
             else:
-                print(f"\n🚫 UNKNOWN SPEAKER")
+                print(f"\n\033[1m🚫 UNKNOWN SPEAKER\033[0m")
                 print(f"   No matching speaker found in database!")
                 print(f"   Best attempt: {best_match[0]} with {best_match[1]['cosine']:.4f} similarity")
             
@@ -367,7 +398,7 @@ class AudioDatabaseManager:
                     # Convert embeddings dict to list for graph generator
                     all_embeddings_list = list(self.embeddings.values())
                     graphs = create_all_advanced_graphs(
-                        audio_path=audio_path,
+                        audio_path=file_path,
                         speaker_name=compare_name,
                         output_dir=str(self.option_2_folder),
                         all_embeddings=all_embeddings_list
@@ -387,22 +418,22 @@ class AudioDatabaseManager:
     def list_database(self):
         """List all entries in the database"""
         print("\n" + "="*50)
-        print("📋 DATABASE CONTENTS")
+        print(" DATABASE CONTENTS")
         print("="*50)
         
         if not self.embeddings:
-            print("📭 Database is empty!")
+            print(" Database is empty!")
             return
         
-        print(f"📊 Total entries: {len(self.embeddings)}")
+        print(f" Total entries: {len(self.embeddings)}")
         print()
         
         for speaker_name in self.embeddings.keys():
             metadata = self.metadata[speaker_name]
             print(f"🎤 Speaker: {speaker_name}")
             print(f"   📁 File: {metadata['audio_file']}")
-            print(f"   ⏱️ Duration: {metadata['duration']:.2f}s")
-            print(f"   📅 Uploaded: {metadata['upload_time'][:19]}")
+            print(f"    Duration: {metadata['duration']:.2f}s")
+            print(f"    Uploaded: {metadata['upload_time'][:19]}")
             print(f"   📊 Features: {metadata['feature_shape']}")
             print()
     
@@ -417,8 +448,8 @@ class AudioDatabaseManager:
             print("📋 MAIN MENU")
             print("="*30)
             print("1. 🎵 Upload new audio")
-            print("2. 🔍 Compare audio")
-            print("3. 📋 List database")
+            print("2.  Compare audio")
+            print("3. List database")
             print("4. ❌ Exit")
             
             choice = input("\nEnter your choice (1-4): ").strip()

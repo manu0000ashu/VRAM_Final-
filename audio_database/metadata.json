@@ -1,0 +1,92 @@
+{
+  "speaker_35_1": {
+    "audio_file": "speaker_35_1_20260503_230919.wav",
+    "upload_time": "2026-05-03T23:09:19.712943",
+    "original_path": "/Users/ashirwadbhardwaj/VRAM_Final /speaker_dataset/50_speakers_audio_data/Speaker0035/Speaker0035_006.wav",
+    "feature_shape": [
+      39
+    ],
+    "sample_rate": 16000,
+    "duration": 60.0033125
+  },
+  "speaker_8": {
+    "audio_file": "speaker_8_20260503_232434.wav",
+    "upload_time": "2026-05-03T23:24:34.409849",
+    "original_path": "/Users/ashirwadbhardwaj/VRAM_Final /speaker_dataset/50_speakers_audio_data/Speaker_0008/Speaker_0008_00001.wav",
+    "feature_shape": [
+      39
+    ],
+    "sample_rate": 16000,
+    "duration": 60.032
+  },
+  "speaker_4": {
+    "audio_file": "speaker_4_20260503_232643.wav",
+    "upload_time": "2026-05-03T23:26:43.918948",
+    "original_path": "/Users/ashirwadbhardwaj/VRAM_Final /speaker_dataset/50_speakers_audio_data/Speaker_0006/Speaker_0006_00002.wav",
+    "feature_shape": [
+      39
+    ],
+    "sample_rate": 16000,
+    "duration": 60.032
+  },
+  "speaker_23": {
+    "audio_file": "speaker_23_20260503_233410.wav",
+    "upload_time": "2026-05-03T23:34:10.583951",
+    "original_path": "/Users/ashirwadbhardwaj/VRAM_Final /speaker_dataset/50_speakers_audio_data/Speaker_0023/Speaker_0023_00002.wav",
+    "feature_shape": [
+      39
+    ],
+    "sample_rate": 16000,
+    "duration": 59.9793125
+  },
+  "speaker_49": {
+    "audio_file": "speaker_49_20260503_233711.wav",
+    "upload_time": "2026-05-03T23:37:11.537426",
+    "original_path": "/Users/ashirwadbhardwaj/VRAM_Final /speaker_dataset/50_speakers_audio_data/Speaker0049/Speaker0049_025.wav",
+    "feature_shape": [
+      39
+    ],
+    "sample_rate": 16000,
+    "duration": 60.0033125
+  },
+  "speaker_50": {
+    "audio_file": "speaker_50_20260504_143353.wav",
+    "upload_time": "2026-05-04T14:33:53.834263",
+    "feature_shape": [
+      39
+    ],
+    "sample_rate": 16000,
+    "duration": 60.00036281179138,
+    "file_type": "AUDIO"
+  },
+  "lady_1": {
+    "audio_file": "lady_1_20260504_144335.wav",
+    "upload_time": "2026-05-04T14:43:35.447607",
+    "feature_shape": [
+      39
+    ],
+    "sample_rate": 16000,
+    "duration": 33.623125,
+    "file_type": "AUDIO"
+  },
+  "speakr_30": {
+    "audio_file": "speakr_30_20260504_151633.wav",
+    "upload_time": "2026-05-04T15:16:33.072837",
+    "feature_shape": [
+      39
+    ],
+    "sample_rate": 16000,
+    "duration": 60.00036281179138,
+    "file_type": "AUDIO"
+  },
+  "speaker_7": {
+    "audio_file": "speaker_7_20260504_154334.wav",
+    "upload_time": "2026-05-04T15:43:34.693523",
+    "feature_shape": [
+      39
+    ],
+    "sample_rate": 16000,
+    "duration": 60.032,
+    "file_type": "AUDIO"
+  }
+}
